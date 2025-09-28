@@ -4,39 +4,52 @@ import { X, Mic, MicOff, Volume2, VolumeX, Globe } from "lucide-react";
 import { speakText, stopSpeech } from "@/lib/ttsUtils";
 import { useSpeechRecognition } from "react-speech-kit";
 
+// Define the Message interface
+export interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'assistant';
+  timestamp: Date;
+  status: string;
+}
+
 interface VoiceModeProps {
   isOpen: boolean;
   onClose: () => void;
   language: string;
   sessionId: string | null;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-const languageData = {
+const languageData: Record<string, { name: string; nativeName: string; country: string }> = {
   "en-US": { name: "English", nativeName: "Eng", country: "en-US" },
   "hi-IN": { name: "हिन्दी", nativeName: "हिन्दी", country: "hi-IN" },
   "mr-IN": { name: "मराठी", nativeName: "मराठी", country: "mr-IN" },
 };
 
 // Language detection patterns
-const languagePatterns = {
+const languagePatterns: Record<string, RegExp> = {
   "hi-IN": /[\u0900-\u097F]/,  // Devanagari script
   "mr-IN": /[\u0900-\u097F]/,  // Devanagari script (same as Hindi)
   "en-US": /^[a-zA-Z\s.,!?'"()-]+$/  // English characters
 };
 
 // Common words for better detection
-const languageKeywords = {
+const languageKeywords: Record<string, string[]> = {
   "hi-IN": ["हैलो", "नमस्ते", "क्या", "कैसे", "है", "मैं", "आप", "यह", "वह"],
   "mr-IN": ["नमस्कार", "काय", "कसे", "आहे", "मी", "तुम्ही", "हे", "ते"],
   "en-US": ["hello", "hi", "what", "how", "is", "are", "i", "you", "this", "that"]
 };
 
-export default function VoiceMode({
+const VoiceMode = ({
   isOpen,
   onClose,
   language,
   sessionId,
-}: VoiceModeProps) {
+  messages,
+  setMessages,
+}) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -253,6 +266,18 @@ export default function VoiceMode({
     setIsProcessing(true);
     setCurrentTranscript("");
 
+    // Add user message to chat history
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: transcript,
+      sender: 'user',
+      timestamp: new Date(),
+      status: 'delivered'
+    };
+    
+    // Update messages in parent component
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+
     try {
       const requestBody = {
         query: transcript,
@@ -275,6 +300,16 @@ export default function VoiceMode({
       const data = await response.json();
       const reply = data.output || "Sorry, I could not get a response.";
       
+      // Add assistant message to chat history
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: reply,
+        sender: 'assistant',
+        timestamp: new Date(),
+        status: 'delivered'
+      };
+      
+      setMessages(prevMessages => [...prevMessages, assistantMessage]);
       setLastResponse(reply);
       setIsProcessing(false);
       
@@ -378,6 +413,28 @@ export default function VoiceMode({
     }
   };
 
+  // Cleanup function to stop all speech and recognition
+  const cleanupSpeech = () => {
+    // Stop any ongoing speech synthesis
+    stopSpeech();
+    
+    // Stop speech recognition
+    stopListening();
+    
+    // Clear any pending timeouts
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+    
+    // Reset states
+    setIsSpeaking(false);
+    setCurrentTranscript("");
+    setLastResponse("");
+    setConversationActive(false);
+    shouldListenRef.current = false;
+  };
+
   useEffect(() => {
     if (isOpen) {
       setConversationActive(true);
@@ -386,18 +443,13 @@ export default function VoiceMode({
         startListening();
       }, 500);
     } else {
-      setConversationActive(false);
-      stopListening();
-      setIsSpeaking(false);
-      setCurrentTranscript("");
-      setLastResponse("");
+      cleanupSpeech();
       languageDetectionRef.current = {};
     }
 
+    // Cleanup on unmount
     return () => {
-      if (speechTimeoutRef.current) {
-        clearTimeout(speechTimeoutRef.current);
-      }
+      cleanupSpeech();
     };
   }, [isOpen]);
 
@@ -574,4 +626,6 @@ export default function VoiceMode({
       </div>
     </div>
   );
-}
+};
+
+export default VoiceMode;

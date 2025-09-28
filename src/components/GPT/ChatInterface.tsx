@@ -329,14 +329,14 @@ export const ChatInterface = () => {
               {/* Right side controls */}
               <div className="flex items-center gap-4">
                 {/* Voice Mode Button */}
-                <Button
+                {/* <Button
                   onClick={() => setVoiceModeOpen(true)}
                   variant="outline"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl border-green-200 bg-green-50 hover:bg-green-100 text-green-700 transition-all duration-200 shadow-sm"
                 >
                   <Phone className="w-4 h-4" />
                   <span className="font-medium text-sm">Voice Mode</span>
-                </Button>
+                </Button> */}
 
                 {/* TTS Toggle */}
                 <div className="flex items-center gap-2">
@@ -548,40 +548,80 @@ export const ChatInterface = () => {
                           </div>
 
                           {/* Voice Mic Icon */}
-                          <div className="absolute top-4 right-4 bottom-4">
-                            <Mic
-                              className={cn(
-                                "absolute right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 cursor-pointer",
-                                listening ? "text-blue-600" : "text-gray-500"
-                              )}
-                              onClick={() => {
-                                if (!supported) {
-                                  alert(
-                                    "Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari."
-                                  );
-                                  return;
-                                }
+                         <div className="absolute top-4 right-4 flex items-center gap-4">
+  {/* Mic Icon */}
+  <Mic
+    className={cn(
+      "h-6 w-6 cursor-pointer transition-colors",
+      listening ? "text-blue-600" : "text-gray-500"
+    )}
+    onClick={() => {
+      if (!supported) {
+        alert(
+          "Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari."
+        );
+        return;
+      }
 
-                                if (listening) {
-                                  stop();
-                                } else {
-                                  try {
-                                    listen({
-                                      lang: language,
-                                      continuous: true,
-                                      interimResults: true,
-                                    });
-                                  } catch (error) {
-                                    console.error(
-                                      "Error starting speech recognition:",
-                                      error
-                                    );
-                                  }
-                                }
-                              }}
-                            />
+      if (listening) {
+        stop();
+      } else {
+        try {
+          listen({
+            lang: language,
+            continuous: true,
+            interimResults: true,
+          });
+        } catch (error) {
+          console.error("Error starting speech recognition:", error);
+        }
+      }
+    }}
+  />
+
+  {/* Voice Mode Button */}
+  <button
+    type="button"
+    onClick={() => setVoiceModeOpen(true)}
+    className="p-2 rounded-lg shadow hover:scale-105 transition"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      fill="currentColor"
+      className="bi bi-soundwave"
+      viewBox="0 0 16 16"
+    >
+      <path
+        fillRule="evenodd"
+        d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 
+        0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 
+        0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 
+        0a.5.5 0 0 1 .5.5v7a.5.5 
+        0 0 1-1 0v-7a.5.5 0 0 1 
+        .5-.5m-6 1.5A.5.5 0 0 1 5 
+        6v4a.5.5 0 0 1-1 0V6a.5.5 
+        0 0 1 .5-.5m8 
+        0a.5.5 0 0 1 .5.5v4a.5.5 
+        0 0 1-1 0V6a.5.5 
+        0 0 1 .5-.5m-10 
+        1A.5.5 0 0 1 3 7v2a.5.5 
+        0 0 1-1 0V7a.5.5 
+        0 0 1 .5-.5m12 
+        0a.5.5 0 0 1 .5.5v2a.5.5 
+        0 0 1-1 0V7a.5.5 
+        0 0 1 .5-.5"
+      />
+    </svg>
+  </button>
+</div>
+
+                          
                           </div>
-                        </div>
+
+                        {/* Voice Mode Button */}
+                       
 
                         {/* Send Button */}
                         <Button
@@ -627,7 +667,9 @@ export const ChatInterface = () => {
         onClose={() => setVoiceModeOpen(false)}
         language={language}
         sessionId={sessionId}
+        messages={messages}
+        setMessages={setMessages}
       />
     </>
-  );
-};
+  )
+}
